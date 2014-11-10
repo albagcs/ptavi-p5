@@ -67,9 +67,8 @@ Se ha capturado una sesión SIP (archivo sip.cap.gz), que se puede abrir con Wir
  ** ¿Por qué crees que se hace uso de este protocolo en esta captura? Busca en la Wikipedia.
     Porque SIP no permite establecer la comunicación cuando los extremos se encuentran
     detrás de enrutadores NAT,y STUN permite establecer la conexión.
-                    ························
  ** ¿Estamos tras un NAT?
-            ···········Sí,por...···········
+     Sí,porque estamos ejecutando el protocolo STUN.
 
 8. La trama 46 es la primera trama SIP. En un entorno como el de Internet, lo habitual es desconocer la dirección IP de la otra parte al realizar una llamada. Por eso, todo usuario registra su localización en un servidor Registrar. El Registrar guarda información sobre los usuarios en un servidor de localización que puede ser utilizado para localizar usuarios.
  ** ¿Qué dirección IP tiene el servidor Registrar?
@@ -107,7 +106,7 @@ Se ha capturado una sesión SIP (archivo sip.cap.gz), que se puede abrir con Wir
     La descripción de la sesión, en protocolo SDP versión 0.
  ** ¿Tiene éxito el primer intento? ¿Cómo lo sabes?
     No, porque el proxy requiere la identificación del cliente: SIP	744	Status: 407 Proxy 
-    Authentication Required··························33
+    Authentication Required··························
  ** ¿En qué se diferencia el segundo INVITE más abajo del primero? ¿A qué crees que se debe esto?
     Primero en el número de bytes de ambas peticiones, el primer INVITE consta de 982 bytes mientras
     que el segundo de 1181 bytes, a que el segundo INVITE ya incluye la información requerida por
@@ -126,9 +125,14 @@ Se ha capturado una sesión SIP (archivo sip.cap.gz), que se puede abrir con Wir
     No, en las diferentes tramas de RTP observamos que no hay bits de padding
     ..0. .... = Padding: False
  ** ¿Cuál es la periodicidad de los paquetes que se envían?
-    ···························································
+    No tenemos una periodicidad como tal en tiempo, en RTP Timestamp es contabilizado en 
+    paquetes, Timestamp aumenta de 160 bytes en 160 bytes, que son 1280 bits
+    Si tenemos 64000bits/s y 1280bits/paquete --> 50 paquetes/segundo
+    Si tenemos 50 paquetes por segundo es la frecuencia, por tanto 1/50 = 0.02 segundos
+    El período son 20ms
  ** ¿Cuántos bits/segundo estamos enviando?
-    ···························································
+    El estándar G.711 trabaja enviando a 64Kbps (64000 bits/segundo)
+    
 
 
 [Al terminar el ejercicio es recomendable hacer commit de los ficheros modificados]
@@ -150,7 +154,11 @@ Se ha capturado una sesión SIP (archivo sip.cap.gz), que se puede abrir con Wir
     Jitter máximo:
                 Flujo vídeo: 183.10 ms
                 Flujo audio: 119.64 ms
-    ·············································································
+    Quiere decir que la variación del retardo media de todos los paquetes es 153.24 ms
+    para vídeo y 42.5 ms para audio.
+    No tenemos calidad de conversación porque estamos recibiendo paquetes tarde (si vemos
+    la IO Graph) y eso no nos gusta, aunque todo tiene un factor de subjetividad respecto a la
+    calidad.
 
 
 13. Elige un paquete RTP de audio. Analiza el flujo de audio en Telephony -> RTP -> Stream Analysis.
@@ -168,27 +176,43 @@ Se ha capturado una sesión SIP (archivo sip.cap.gz), que se puede abrir con Wir
     paquete anterior y el actual, por tanto si ha tenido que esperar más, la variación de 
     esa espera (jitter) aumenta.
  ** ¿Es comparable este cambio con el tiempo desde la recepción del paquete anterior? ¿Por qué?
-····································································································
+    ····································································································
  ** ¿Cuál es la dependencia entre el tiempo transcurrido desde el paquete anterior y el valor de jitter?
-    ·································································································
+    Cuanto más aumenta Delta (retardo) más aumenta el jitter y viceversa, pues el jitter es la 
+    variación del retardo y si éste varía lo hace el jitter.
 
 
 14. En Telephony selecciona el menú VoIP calls. Verás que se lista la llamada de voz IP capturada en una ventana emergente. Selecciona esa llamada y pulsa el botón Graph.
  ** ¿Cuánto dura la conversación?
+    24.80289 segundos
  ** ¿Cuáles son sus SSRC? ¿Por qué hay varios SSRCs? ¿Hay CSRCs?
-
+    El SSRC para el flujo de vídeo H.261 es: Synchronization Source identifier: 0x43306582 (1127245186)
+    El SSRC para el flujo de audio G.711 es: Synchronization Source identifier: 0xbf4afd37 (3209362743)
+    Porque tenemos por definición un SSRC por flujo
+    No tenemos CSRCs porque no observamos en la captura un mezclador que le de un nuevo SSRC y 
+    cambie los actuales de cada flujo por CSRCs.
 
 15. Identifica la trama donde se finaliza la conversación.
  ** ¿Qué método SIP se utiliza?
+    BYE
  ** ¿En qué trama(s)?
+    En las tramas 924, 925, 927, 933
  ** ¿Por qué crees que se envía varias veces?
+    Porque estamos usando UDP, que es un protocolo no fiable, y necesitamos que sepa
+    que se ha acabado la conexión, por eso lo mandamos varias veces, asegurándonos
+    que así le llegará si se pierde alguno.
+    
+    
 
 
 16. Finalmente, se cierra la aplicación de VozIP.
  ** ¿Por qué aparece una instrucción SIP del tipo REGISTER?
+    Porque he enviado el BYE y quiero que me borren del Registro, mando como hacíamos en la 
+    práctica de SIP el Expires a 0.
  ** ¿En qué trama sucede esto?
+    950
  ** ¿En qué se diferencia con la instrucción que se utilizó con anterioridad (al principio de la sesión)?
-
+    En que ahora el Expires es 0 y al inicio de sesión 3600 (segundos)
 
 
 [Al terminar el ejercicio es recomendable hacer commit de los ficheros modificados]
