@@ -65,14 +65,22 @@ Se ha capturado una sesión SIP (archivo sip.cap.gz), que se puede abrir con Wir
 
 7. Hasta la trama 45 se puede observar una secuencia de tramas del protocolo STUN.
  ** ¿Por qué crees que se hace uso de este protocolo en esta captura? Busca en la Wikipedia.
+    Porque SIP no permite establecer la comunicación cuando los extremos se encuentran
+    detrás de enrutadores NAT,y STUN permite establecer la conexión.
+                    ························
  ** ¿Estamos tras un NAT?
-
+            ···········Sí,por...···········
 
 8. La trama 46 es la primera trama SIP. En un entorno como el de Internet, lo habitual es desconocer la dirección IP de la otra parte al realizar una llamada. Por eso, todo usuario registra su localización en un servidor Registrar. El Registrar guarda información sobre los usuarios en un servidor de localización que puede ser utilizado para localizar usuarios.
  ** ¿Qué dirección IP tiene el servidor Registrar?
+    86.64.162.35, por el que preguntó el cliente al iniciar la captura.
  ** ¿A qué puerto (del servidor Registrar) se envían los paquetes SIP?
- ** ¿Qué método SIP utiliza el UA para registrarse?
+    Al puerto 5060, lo vemos en el apartado del protocolo UDP de la petición SIP:
+        Destination port: sip(5060)
+ ** ¿Qué método SIP utiliza el UA para registrarse? 
+    Method: REGISTER
  ** Además de REGISTER, ¿qué instrucciones SIP entiende el UA?
+    Allow: INVITE,ACK,OPTIONS,BYE,CANCEL,NOTIFY,REFER,MESSAGE
 
 
 
@@ -80,25 +88,47 @@ Se ha capturado una sesión SIP (archivo sip.cap.gz), que se puede abrir con Wir
 
 9. Fijémonos en las tramas siguientes a la número 46:
  ** ¿Se registra con éxito en el primer intento?
+    No, recibe el mensaje Status: 401 Unauthorized del servidor.
  ** ¿Cómo sabemos si el registro se ha realizado correctamente o no?
+    ·······Si recibimos el código 200 OK del servidor sabemos que el registro··········
+    se ha realizado correctamnete.
  ** ¿Podrías identificar las diferencias entre el primer intento y el segundo de registro? (fíjate en el tamaño de los paquetes y mira a qué se debe el cambio)
+    El paquete del primer intento consta de 513 bytes y el del segundo intento de 712 bytes. El cambio
+    es debido a que en el segundo intento se incluye un campo más en el Message Header:
+    Authorization: Digest username="grex", realm="ekiga.net", nonce="45a439ee7438aaea43ae8c7c2382922187f86c8b", uri="sip:ekiga.net",               algorithm=md5, response="5267d4e49d707d4443baefa913e8ff90" 
  ** ¿Cuánto es el valor del tiempo de expiración de la sesión? Indica las unidades.
+    3600 segundos
 
 
 10. Una vez registrados, podemos efectuar una llamada. Vamos a probar con el servicio de eco de Ekiga que nos permite comprobar si nos hemos conectado correctamente. El servicio de eco tiene la dirección sip:500@ekiga.net. Veamos el INVITE de cerca.
  ** ¿Puede verse el nombre del que efectúa la llamada, así como su dirección SIP?
+    Sí, en el apartado From de Message Header: Gregorio Robles sip:grex@ekiga.net
  ** ¿Qué es lo que contiene el cuerpo de la trama? ¿En qué formato/protocolo está?
+    La descripción de la sesión, en protocolo SDP versión 0.
  ** ¿Tiene éxito el primer intento? ¿Cómo lo sabes?
+    No, porque el proxy requiere la identificación del cliente: SIP	744	Status: 407 Proxy 
+    Authentication Required··························33
  ** ¿En qué se diferencia el segundo INVITE más abajo del primero? ¿A qué crees que se debe esto?
+    Primero en el número de bytes de ambas peticiones, el primer INVITE consta de 982 bytes mientras
+    que el segundo de 1181 bytes, a que el segundo INVITE ya incluye la información requerida por
+    el proxy: Proxy-Authorization: Digest username="grex", realm="ekiga.net", nonce="45a439f6ba5f681cd945fb7c40529fd1e0f28a81", uri="sip:500@ekiga.net", algorithm=md5, response="9a5627c14a8a433bd308d2ec54777240"
 
 
 11. Una vez conectado, estudia el intercambio de tramas.
  ** ¿Qué protocolo(s) se utiliza(n)? ¿Para qué sirven estos protocolos?
+    H.261, que es un estándar ITU-T de compresión de vídeo, RTP, que nos permite la
+    transmisión de información en tiempo real, como audio y vídeo, viendo las tramas
+    RTP vemos que se codifica audio con el estándar ITU-T G.711 PCMA (8) 
  ** ¿Cuál es el tamaño de paquete de los mismos?
+    Las tramas RTP tienen siempre la misma longitud (214bytes) mientras que las
+    tramas H.261 varían entre 200-1080 bytes.
  ** ¿Se utilizan bits de padding?
+    No, en las diferentes tramas de RTP observamos que no hay bits de padding
+    ..0. .... = Padding: False
  ** ¿Cuál es la periodicidad de los paquetes que se envían?
+    ···························································
  ** ¿Cuántos bits/segundo estamos enviando?
-
+    ···························································
 
 
 [Al terminar el ejercicio es recomendable hacer commit de los ficheros modificados]
