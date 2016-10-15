@@ -1,4 +1,4 @@
 ptavi-p5
 ========
 
-Repositorio de inicio para la práctica 5 de PTAVI
+This repository contains the scripts of the ptavi's (suject) fifth practise
